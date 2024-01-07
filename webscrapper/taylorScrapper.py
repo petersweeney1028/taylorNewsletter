@@ -8,6 +8,7 @@ import time
 from openai import OpenAI
 from config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
+import datetime
 
 
 
@@ -69,17 +70,32 @@ def summarize_article_with_gpt3(article_text):
         return "Error in summarization: " + str(e)
 
 def process_and_summarize_articles(results):
+    html_content = ""
     for article in results:
         content = fetch_article_content(article['url'])
         summary = summarize_article_with_gpt3(content)
-        print(f"Title: {article['title']}\nSummary: {summary}\n")
+        
+        # Create an HTML snippet for each article
+        article_html = f'<h2><a href="{article["url"]}" target="_blank">{article["title"]}</a></h2>\n<p>{summary}</p>\n'
+        html_content += article_html
 
+    return html_content
 
-# Function to run the scraper with a specified query
-def run_scraper(query):
-    return scrape_google_news_with_firefox(query)
+current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+file_name = f"final_newsletter_{current_date_str}.html"
 
-scraped_articles = run_scraper('taylor swift when:1d')
-process_and_summarize_articles(scraped_articles)
+if __name__ == "__main__":
+    results = scrape_google_news_with_firefox('taylor swift when:1d')
+    articles_html = process_and_summarize_articles(results)
 
+    # Read the template HTML
+    with open('/Users/petersweeney/Desktop/Coding/taylorNewsletter/taylorFormat', 'r') as file:
+        template_html = file.read()
 
+    # Replace the placeholder in the template with actual content
+    final_newsletter_html = template_html.replace('<!-- Insert Articles Here -->', articles_html)
+    final_newsletter_html = final_newsletter_html.replace('<!-- Insert Date Here -->', current_date_str)
+
+    # Save the final newsletter HTML to a file
+    with open(file_name, 'w') as file:
+        file.write(final_newsletter_html)
