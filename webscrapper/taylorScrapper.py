@@ -9,6 +9,8 @@ from openai import OpenAI
 from config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 import datetime
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 
@@ -28,7 +30,7 @@ def scrape_google_news_with_firefox(query):
     articles = driver.find_elements(By.CSS_SELECTOR, 'a.JtKRv')
 
     results = []
-    for article in articles[:4]:  # Limit to first 4 articles
+    for article in articles[:10]:  # Limit to first 4 articles
         title = article.text
         url = article.get_attribute('href')
 
@@ -62,31 +64,67 @@ def fetch_article_content(url):
 def summarize_article_with_gpt3(article_text):
 
     try:
-        response = client.completions.create(model="text-davinci-003",  
-        prompt="Write a punchy, engaging summary suitable for a newsletter: \n\n" + article_text,
-        max_tokens=150)
+        response = client.completions.create(model="gpt-3.5-turbo-instruct",  
+        prompt="Write a short engaging summary of this article, with a tone fit for millennials: \n\n" + article_text,
+        max_tokens=200)
         return response.choices[0].text.strip()
     except Exception as e:
         return "Error in summarization: " + str(e)
 
 def process_and_summarize_articles(results):
-    html_content = ""
+    all_summaries = []
     for article in results:
         content = fetch_article_content(article['url'])
         summary = summarize_article_with_gpt3(content)
-        
-        # Create an HTML snippet for each article
-        article_html = f'<h2><a href="{article["url"]}" target="_blank">{article["title"]}</a></h2>\n<p>{summary}</p>\n'
-        html_content += article_html
+        all_summaries.append({'title': article['title'], 'url': article['url'], 'summary': summary})
+    return all_summaries
 
-    return html_content
+def extract_features(summaries):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(summaries)
+    return tfidf_matrix
+
+def get_similarity_matrix(tfidf_matrix):
+    return cosine_similarity(tfidf_matrix)
+
+def filter_similar_and_taylor_related_articles(all_summaries, similarity_matrix, threshold=0.01):
+    filtered_summaries = []
+    for i, article in enumerate(all_summaries):
+        if "Taylor Swift" not in article['summary']:
+            continue  # Skip articles not mentioning Taylor Swift
+
+        if any(similarity_matrix[i][j] > threshold for j in range(i)):
+            continue  # Skip articles that are too similar to previous ones
+
+        filtered_summaries.append(article)
+        if len(filtered_summaries) >= 5:
+            break  # Limit to 5 articles
+
+    return filtered_summaries
+
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 file_name = f"final_newsletter_{current_date_str}.html"
 
 if __name__ == "__main__":
     results = scrape_google_news_with_firefox('taylor swift when:1d')
-    articles_html = process_and_summarize_articles(results)
+
+    # Process and summarize articles, and collect their summaries
+    all_summarized_articles = process_and_summarize_articles(results)
+
+    # Extract features for similarity analysis
+    summaries_text = [article['summary'] for article in all_summarized_articles]
+    tfidf_matrix = extract_features(summaries_text)
+
+    # Calculate similarity and filter articles
+    similarity_matrix = get_similarity_matrix(tfidf_matrix)
+    unique_and_relevant_articles = filter_similar_and_taylor_related_articles(all_summarized_articles, similarity_matrix)
+
+    # Generate HTML content
+    html_content = ""
+    for article in unique_and_relevant_articles:
+        articles_html = f'<h2><a href="{article["url"]}" target="_blank">{article["title"]}</a></h2>\n<p>{article["summary"]}</p>\n'
+        html_content += articles_html
 
     # Read the template HTML
     with open('/Users/petersweeney/Desktop/Coding/taylorNewsletter/taylorFormat', 'r') as file:
