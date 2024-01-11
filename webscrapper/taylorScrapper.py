@@ -30,7 +30,7 @@ def scrape_google_news_with_firefox(query):
     articles = driver.find_elements(By.CSS_SELECTOR, 'a.JtKRv')
 
     results = []
-    for article in articles[:10]:  # Limit to first 4 articles
+    for article in articles[:10]:  # Limit to first 10 articles
         title = article.text
         url = article.get_attribute('href')
 
@@ -65,75 +65,59 @@ def summarize_article_with_gpt3(article_text):
 
     try:
         response = client.completions.create(model="gpt-3.5-turbo-instruct",  
-        prompt="Write a short engaging summary of this article, with a tone fit for millennials: \n\n" + article_text,
+        prompt="Write a short engaging summary of this article, with a tone fit for millennials but please do not use the word millenial: \n\n" + article_text,
         max_tokens=200)
         return response.choices[0].text.strip()
     except Exception as e:
         return "Error in summarization: " + str(e)
 
 def process_and_summarize_articles(results):
-    all_summaries = []
+    html_content = ""
+    articles_included = 0
+    included_articles_content = []  # Store contents of included articles for similarity check
+
     for article in results:
         content = fetch_article_content(article['url'])
-        summary = summarize_article_with_gpt3(content)
-        all_summaries.append({'title': article['title'], 'url': article['url'], 'summary': summary})
-    return all_summaries
 
-def extract_features(summaries):
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform(summaries)
-    return tfidf_matrix
+        if "Taylor Swift" not in content:
+            continue  # Skip articles that do not mention Taylor Swift
 
-def get_similarity_matrix(tfidf_matrix):
-    return cosine_similarity(tfidf_matrix)
+        # Compare with already included articles to check for similarity
+        is_similar = False
+        for included_content in included_articles_content:
+            tfidf_vectorizer = TfidfVectorizer()
+            tfidf_matrix = tfidf_vectorizer.fit_transform([content, included_content])
+            cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
 
-def filter_similar_and_taylor_related_articles(all_summaries, similarity_matrix, threshold=0.01):
-    filtered_summaries = []
-    for i, article in enumerate(all_summaries):
-        if "Taylor Swift" not in article['summary']:
-            continue  # Skip articles not mentioning Taylor Swift
+            if cosine_sim[0][0] > 0.75:  # Threshold for similarity
+                is_similar = True
+                break
 
-        if any(similarity_matrix[i][j] > threshold for j in range(i)):
-            continue  # Skip articles that are too similar to previous ones
+        if not is_similar and articles_included < 5:
+            summary = summarize_article_with_gpt3(content)
+            if summary:
+                article_html = f'<h2><a href="{article["url"]}" target="_blank">{article["title"]}</a></h2>\n<p>{summary}</p>\n'
+                html_content += article_html
+                articles_included += 1
+                included_articles_content.append(content)
 
-        filtered_summaries.append(article)
-        if len(filtered_summaries) >= 5:
-            break  # Limit to 5 articles
-
-    return filtered_summaries
-
+    return html_content
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 file_name = f"final_newsletter_{current_date_str}.html"
 
 if __name__ == "__main__":
+    current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    file_name = f"final_newsletter_{current_date_str}.html"
+
     results = scrape_google_news_with_firefox('taylor swift when:1d')
+    articles_html = process_and_summarize_articles(results)
 
-    # Process and summarize articles, and collect their summaries
-    all_summarized_articles = process_and_summarize_articles(results)
-
-    # Extract features for similarity analysis
-    summaries_text = [article['summary'] for article in all_summarized_articles]
-    tfidf_matrix = extract_features(summaries_text)
-
-    # Calculate similarity and filter articles
-    similarity_matrix = get_similarity_matrix(tfidf_matrix)
-    unique_and_relevant_articles = filter_similar_and_taylor_related_articles(all_summarized_articles, similarity_matrix)
-
-    # Generate HTML content
-    html_content = ""
-    for article in unique_and_relevant_articles:
-        articles_html = f'<h2><a href="{article["url"]}" target="_blank">{article["title"]}</a></h2>\n<p>{article["summary"]}</p>\n'
-        html_content += articles_html
-
-    # Read the template HTML
     with open('/Users/petersweeney/Desktop/Coding/taylorNewsletter/taylorFormat', 'r') as file:
         template_html = file.read()
 
-    # Replace the placeholder in the template with actual content
     final_newsletter_html = template_html.replace('<!-- Insert Articles Here -->', articles_html)
     final_newsletter_html = final_newsletter_html.replace('<!-- Insert Date Here -->', current_date_str)
 
-    # Save the final newsletter HTML to a file
     with open(file_name, 'w') as file:
         file.write(final_newsletter_html)
