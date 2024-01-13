@@ -1,18 +1,18 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 import sqlite3
 
 app = Flask(__name__)
 
 # Initialize and connect to SQLite database
 def get_db_connection():
-    conn = sqlite3.connect('newsletter.db')
+    conn = sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/backup/newsletter.db')
     conn.row_factory = sqlite3.Row
     return conn
 
 # Route for the main page
 @app.route('/')
 def index():
-    return "Welcome to Taylor Times Newsletter Signup!"
+    return render_template('taylorLanding.html')
 
 # Route for handling subscriptions
 @app.route('/subscribe', methods=['POST'])

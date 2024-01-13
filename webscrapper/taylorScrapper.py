@@ -89,7 +89,7 @@ def process_and_summarize_articles(results):
             tfidf_matrix = tfidf_vectorizer.fit_transform([content, included_content])
             cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
 
-            if cosine_sim[0][0] > 0.75:  # Threshold for similarity
+            if cosine_sim[0][0] > 0.5:  # Threshold for similarity
                 is_similar = True
                 break
 
