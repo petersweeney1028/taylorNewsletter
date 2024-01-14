@@ -4,10 +4,17 @@ import sqlite3
 app = Flask(__name__)
 
 # Initialize and connect to SQLite database
+class DatabaseConnection:
+    def __enter__(self):
+        self.conn = sqlite3.connect('newsletter.db')
+        self.conn.row_factory = sqlite3.Row
+        return self.conn
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()
+
 def get_db_connection():
-    conn = sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/backup/newsletter.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+    return DatabaseConnection()
 
 # Route for the main page
 @app.route('/')
@@ -18,11 +25,13 @@ def index():
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
     email = request.form['email']
-    conn = get_db_connection()
-    conn.execute('INSERT INTO subscribers (email) VALUES (?)', (email,))
-    conn.commit()
-    conn.close()
-    return jsonify({"success": True, "message": "Subscription successful"})
+    try:
+        with get_db_connection() as conn:
+            conn.execute('INSERT INTO subscribers (email) VALUES (?)', (email,))
+            conn.commit()
+        return jsonify({"success": True, "message": "Subscription successful"})
+    except sqlite3.Error as e:
+        return jsonify({"success": False, "message": str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
