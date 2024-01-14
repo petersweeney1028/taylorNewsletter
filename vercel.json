@@ -2,7 +2,7 @@
     "version": 2,
     "routes": [
       { "handle": "filesystem" },
-      { "src": "/(.*)", "dest": "/frontend/taylorLanding.html" }
+      { "src": "/(.*)", "dest": "/frontend/templates/taylorLanding.html" }
     ]
   }
   
