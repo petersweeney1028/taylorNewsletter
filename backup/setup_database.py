@@ -1,7 +1,7 @@
 import sqlite3
 
 # Create a new SQLite database (or connect if it already exists)
-conn = sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/backup/newsletter.db')
+conn = sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/newsletter.db')
 
 # Create a new table named 'subscribers'
 conn.execute('''CREATE TABLE subscribers (

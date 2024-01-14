@@ -1,7 +1,8 @@
+import os
 from flask import Flask, render_template, request, jsonify, url_for
 import sqlite3
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.getcwd())  # Set the current working directory as the template folder
 
 # Initialize and connect to SQLite database
 class DatabaseConnection:
@@ -19,7 +20,7 @@ def get_db_connection():
 # Route for the main page
 @app.route('/')
 def index():
-    return render_template('taylorLanding.html')
+    return render_template('index.html')
 
 # Route for handling subscriptions
 @app.route('/subscribe', methods=['POST'])
@@ -31,6 +32,7 @@ def subscribe():
             conn.commit()
         return jsonify({"success": True, "message": "Subscription successful"})
     except sqlite3.Error as e:
+        print("Database error:", e)  # Log the error
         return jsonify({"success": False, "message": str(e)})
 
 if __name__ == '__main__':
