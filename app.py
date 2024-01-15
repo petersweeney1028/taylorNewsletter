@@ -5,6 +5,7 @@ import sqlite3
 
 
 app = Flask(__name__, template_folder=os.getcwd())  # Set the current working directory as the template folder
+CORS(app, resources={r"/subscribe": {"origins": "http://127.0.0.1:5000"}})
 
 # Initialize and connect to SQLite database
 class DatabaseConnection:

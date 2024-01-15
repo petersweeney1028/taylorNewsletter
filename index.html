@@ -128,10 +128,10 @@
 
         function subscribe() {
             const email = document.getElementById('email').value;
-            fetch('/subscribe', {
+            fetch('https://taylor-newsletter-20d59f2ef5fa.herokuapp.com/subscribe', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'https://taylor-newsletter-20d59f2ef5fa.herokuapp.com/',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: 'email=' + encodeURIComponent(email)
             })
@@ -147,6 +147,7 @@
                 document.getElementById('message').textContent = "Network error, please try again";
             });
         }
+
     </script>
 </body>
 </html>
