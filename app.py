@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, request, jsonify, url_for
+from flask_cors import CORS
 import sqlite3
+
 
 app = Flask(__name__, template_folder=os.getcwd())  # Set the current working directory as the template folder
 
@@ -31,8 +33,9 @@ def subscribe():
             conn.execute('INSERT INTO subscribers (email) VALUES (?)', (email,))
             conn.commit()
         return jsonify({"success": True, "message": "Subscription successful"})
-    except sqlite3.Error as e:
-        print("Database error:", e)  # Log the error
+    except sqlite3.IntegrityError:
+        return jsonify({"success": False, "message": "Email already subscribed"})
+    except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
 if __name__ == '__main__':
