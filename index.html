@@ -84,10 +84,10 @@
     </div>
     <div class="carousel">
         <div class="carousel-images">
-            <img src="/Users/petersweeney/Desktop/Coding/taylorNewsletter/static/Taylor1.jpeg" alt="Taylor Swift Image 1">
-            <img src="/Users/petersweeney/Desktop/Coding/taylorNewsletter/static/Taylor2.webp" alt="Taylor Swift Image 2">
-            <img src="/Users/petersweeney/Desktop/Coding/taylorNewsletter/static/Taylor3.jpeg" alt="Taylor Swift Image 3">
-            <img src="/Users/petersweeney/Desktop/Coding/taylorNewsletter/static/Taylor4.jpeg" alt="Taylor Swift Image 4">
+            <img src="{{ url_for('static', filename='Taylor1.jpeg') }}" alt="Taylor Swift">
+            <img src="{{ url_for('static', filename='Taylor2.webp') }}" alt="Taylor Swift Image 2">
+            <img src="{{ url_for('static', filename='Taylor3.jpeg') }}" alt="Taylor Swift Image 3">
+            <img src="{{ url_for('static', filename='Taylor4.jpeg') }}" alt="Taylor Swift Image 4">
         </div>
     </div>
     <div class="subscription-form">
