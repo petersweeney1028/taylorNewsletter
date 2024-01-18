@@ -1,0 +1,2 @@
+OPENAI_API_KEY = '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'
+SENDGRID_API_KEY='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'

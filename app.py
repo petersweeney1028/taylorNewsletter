@@ -2,6 +2,9 @@ import os
 from flask import Flask, render_template, request, jsonify, url_for
 from flask_cors import CORS
 import sqlite3
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
 
 
 app = Flask(__name__, template_folder=os.getcwd())  # Set the current working directory as the template folder
@@ -20,6 +23,21 @@ class DatabaseConnection:
 def get_db_connection():
     return DatabaseConnection()
 
+def send_welcome_email(email):
+    sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+    from_email = 'swiftie@taylortimes.news'  # Replace with your new email address
+    subject = 'Welcome to Taylor Times! Please Confirm Your Email'
+    content = '''
+        <p>Thank you for subscribing to Taylor Times! Please reply to this email to make sure you get our next edition.</p>
+    '''
+    message = Mail(
+        from_email=from_email,
+        to_emails=email,
+        subject=subject,
+        html_content=content
+    )
+    sg.send(message)
+
 # Route for the main page
 @app.route('/')
 def index():
@@ -29,15 +47,24 @@ def index():
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
     email = request.form['email']
+
+    # Insert the new subscriber into the database with 'confirmed' defaulting to FALSE
     try:
-        with get_db_connection() as conn:
+        with sqlite3.connect('newsletter.db') as conn:
             conn.execute('INSERT INTO subscribers (email) VALUES (?)', (email,))
             conn.commit()
-        return jsonify({"success": True, "message": "Subscription successful"})
+
+        # Send a welcome email to the new subscriber
+        send_welcome_email(email)
+
+        return jsonify({"success": True, "message": "Subscription initiated. Please check your email to confirm."})
     except sqlite3.IntegrityError:
+        # This block is executed if the email is already in the database
         return jsonify({"success": False, "message": "Email already subscribed"})
     except Exception as e:
+        # Handle other exceptions
         return jsonify({"success": False, "message": str(e)})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
