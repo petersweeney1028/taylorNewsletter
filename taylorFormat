@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Taylor Times - <!-- Insert Date Here --></title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 600px; margin: auto; }
+        .article { margin-bottom: 20px; }
+        .article img { width: 100%; height: auto; }
+        .article-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .article-summary { font-size: 14px; }
+
+        @media only screen and (max-width: 600px) {
+            .container { padding: 0 15px; }
+            .article-title { font-size: 16px; }
+            .article-summary { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+        <div id="banner" style="text-align:center; margin-bottom:20px;">
+            <img src="https://uproxx.com/wp-content/uploads/2023/07/GettyImages-1524111839.jpg?w=1024&h=437&crop=1" alt="Taylor Swift Newsletter Banner" style="width:100%; max-width:600px; height:auto;">
+        </div>
+    <div class="container">
+        <h1>Daily Taylor Swift News</h1>
+            <!-- Insert Articles Here -->
+    </div>
+</body>
+</html>
