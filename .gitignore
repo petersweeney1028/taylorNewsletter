@@ -3,3 +3,4 @@ config.py
 *.logsendgrid.env
 sendgrid.env
 
+sendgrid.env
