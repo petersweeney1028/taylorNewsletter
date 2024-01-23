@@ -1,14 +1,12 @@
 import os
-from flask import Flask, render_template, request, jsonify, url_for
-from flask_cors import CORS
 import sqlite3
-from sendgrid import SendGridAPIClient
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-
-app = Flask(__name__, template_folder=os.getcwd())  # Set the current working directory as the template folder
-CORS(app, resources={r"/subscribe": {"origins": ["https://www.taylortimes.news"]}})
+app = Flask(__name__, template_folder=os.getcwd())
+CORS(app, origins=["https://www.taylortimes.news"])
 
 # Initialize and connect to SQLite database
 class DatabaseConnection:
@@ -25,7 +23,10 @@ def get_db_connection():
 
 def send_welcome_email(email):
     try:
-        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg_api_key = os.getenv('SENDGRID_API_KEY')
+        if not sg_api_key:
+            raise ValueError("SendGrid API key not found in environment variables.")
+        sg = SendGridAPIClient(sg_api_key)
         from_email = 'swiftie@taylortimes.news'
         subject = 'Welcome to Taylor Times!'
         content = '<p>Thank you for subscribing to Taylor Times! Stay tuned for updates.</p>'
