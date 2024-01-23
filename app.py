@@ -23,11 +23,9 @@ class DatabaseConnection:
 def get_db_connection():
     return DatabaseConnection()
 
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-
 def send_welcome_email(email):
     try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         from_email = 'swiftie@taylortimes.news'
         subject = 'Welcome to Taylor Times!'
         content = '<p>Thank you for subscribing to Taylor Times! Stay tuned for updates.</p>'
