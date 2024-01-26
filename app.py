@@ -10,16 +10,17 @@ app = Flask(__name__, template_folder=os.getcwd())
 CORS(app, origins=["https://www.taylortimes.news", "http://127.0.0.1:5000/"])
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///newsletter.db')
+uri = os.getenv('DATABASE_URL')
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = uri or 'sqlite:///newsletter.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 class Subscriber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-
-def init_db():
-    db.create_all()
 
 def send_welcome_email(email):
     try:
@@ -45,16 +46,18 @@ def index():
 def subscribe():
     email = request.form['email']
     try:
-        with sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/newsletter.db') as conn:
-            conn.execute('INSERT INTO subscribers (email) VALUES (?)', (email,))
-            conn.commit()
+        new_subscriber = Subscriber(email=email)
+        db.session.add(new_subscriber)
+        db.session.commit()
+
         if send_welcome_email(email):
             return jsonify({"success": True, "message": "Subscription successful. Please check your email."})
         else:
             return jsonify({"success": False, "message": "Subscription successful but failed to send email."})
-    except sqlite3.IntegrityError:
-        return jsonify({"success": False, "message": "Email already subscribed"})
     except Exception as e:
+        db.session.rollback()  # Rollback in case of any error
+        if isinstance(e, sqlalchemy.exc.IntegrityError):
+            return jsonify({"success": False, "message": "Email already subscribed"})
         print(f"Database or email error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
