@@ -4,25 +4,22 @@ from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__, template_folder=os.getcwd())
 CORS(app, origins=["https://www.taylortimes.news", "http://127.0.0.1:5000/"])
 
 
-def init_db():
-    conn = sqlite3.connect('newsletter.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS subscribers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL UNIQUE
-        )
-    ''')
-    conn.commit()
-    conn.close()
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///newsletter.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-# Call init_db to initialize the database
-init_db()
+class Subscriber(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
+def init_db():
+    db.create_all()
 
 def send_welcome_email(email):
     try:

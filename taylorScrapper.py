@@ -15,18 +15,27 @@ from sendgrid.helpers.mail import Mail
 from openai import OpenAI
 from config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
+from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
 
 EMAIL_FROM = 'swiftie@taylortimes.news'
 EMAIL_SUBJECT = 'Taylor Times Newsletter'
 
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///newsletter.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+class Subscriber(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
 def fetch_subscribers():
     print("Fetching subscribers...")
-    subscribers = []
-    with sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/newsletter.db') as conn:
-        cursor = conn.execute('SELECT email FROM subscribers')
-        subscribers = [row[0] for row in cursor.fetchall()]
-    print(f"Found {len(subscribers)} subscribers.")
-    return subscribers
+    subscribers = Subscriber.query.all()
+    emails = [subscriber.email for subscriber in subscribers]
+    print(f"Found {len(emails)} subscribers.")
+    return emails
 
 def send_email(recipients, html_content):
     print("Preparing to send emails...")
@@ -159,6 +168,9 @@ if __name__ == "__main__":
     final_newsletter_html = template_html.replace('<!-- Insert Articles Here -->', articles_html)
     final_newsletter_html = final_newsletter_html.replace('<!-- Insert Date Here -->', datetime.datetime.now().strftime("%Y-%m-%d"))
 
+    with app.app_context():
+        db.create_all()
+        
     # Fetch subscribers and send emails
     subscribers = fetch_subscribers()
     if subscribers:
