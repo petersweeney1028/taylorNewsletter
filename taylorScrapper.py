@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -5,13 +6,45 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 import time
-from openai import OpenAI
-from config import OPENAI_API_KEY
-client = OpenAI(api_key=OPENAI_API_KEY)
 import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import sqlite3
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+from openai import OpenAI
+from config import OPENAI_API_KEY
+client = OpenAI(api_key=OPENAI_API_KEY)
 
+EMAIL_FROM = 'swiftie@taylortimes.news'
+EMAIL_SUBJECT = 'Taylor Times Newsletter'
+
+def fetch_subscribers():
+    print("Fetching subscribers...")
+    subscribers = []
+    with sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/newsletter.db') as conn:
+        cursor = conn.execute('SELECT email FROM subscribers')
+        subscribers = [row[0] for row in cursor.fetchall()]
+    print(f"Found {len(subscribers)} subscribers.")
+    return subscribers
+
+def send_email(recipients, html_content):
+    print("Preparing to send emails...")
+    sg_api_key = os.getenv('SENDGRID_API_KEY')
+    if not sg_api_key:
+        raise ValueError("SendGrid API key not found in environment variables.")
+
+    sg = SendGridAPIClient(sg_api_key)
+
+    for recipient in recipients:
+        message = Mail(
+            from_email=EMAIL_FROM,
+            to_emails=recipient,
+            subject=EMAIL_SUBJECT,
+            html_content=html_content
+        )
+        response = sg.send(message)
+        print(f"Email sent to {recipient}, response status: {response.status_code}")
 
 
 def scrape_google_news_with_firefox(query):
@@ -107,17 +140,29 @@ current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 file_name = f"final_newsletter_{current_date_str}.html"
 
 if __name__ == "__main__":
+    print("Script started.")
     current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     file_name = f"final_newsletter_{current_date_str}.html"
 
+    print("Starting the scraping process...")
     results = scrape_google_news_with_firefox('taylor swift when:1d')
+    print(f"Scraping completed, found {len(results)} articles.")
+    print("Processing and summarizing articles...")
     articles_html = process_and_summarize_articles(results)
-
+    print("Article summarization completed.")
+    
+    
     with open('/Users/petersweeney/Desktop/Coding/taylorNewsletter/taylorFormat', 'r') as file:
         template_html = file.read()
+    print("Template HTML read from file.")
 
     final_newsletter_html = template_html.replace('<!-- Insert Articles Here -->', articles_html)
-    final_newsletter_html = final_newsletter_html.replace('<!-- Insert Date Here -->', current_date_str)
+    final_newsletter_html = final_newsletter_html.replace('<!-- Insert Date Here -->', datetime.datetime.now().strftime("%Y-%m-%d"))
 
-    with open(file_name, 'w') as file:
-        file.write(final_newsletter_html)
+    # Fetch subscribers and send emails
+    subscribers = fetch_subscribers()
+    if subscribers:
+        send_email(subscribers, final_newsletter_html)
+    else:
+        print("No subscribers found. No emails sent.")
+    print("Script completed.")

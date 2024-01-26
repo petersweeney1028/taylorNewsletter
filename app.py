@@ -6,20 +6,23 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 app = Flask(__name__, template_folder=os.getcwd())
-CORS(app, origins=["https://www.taylortimes.news"])
+CORS(app, origins=["https://www.taylortimes.news", "http://127.0.0.1:5000/"])
 
-# Initialize and connect to SQLite database
-class DatabaseConnection:
-    def __enter__(self):
-        self.conn = sqlite3.connect('newsletter.db')
-        self.conn.row_factory = sqlite3.Row
-        return self.conn
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()
+def init_db():
+    conn = sqlite3.connect('newsletter.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS subscribers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-def get_db_connection():
-    return DatabaseConnection()
+# Call init_db to initialize the database
+init_db()
 
 def send_welcome_email(email):
     try:
@@ -37,17 +40,15 @@ def send_welcome_email(email):
         print(f"Error sending email: {e}")
         return False
 
-# Route for the main page
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Route for handling subscriptions
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
     email = request.form['email']
     try:
-        with sqlite3.connect('newsletter.db') as conn:
+        with sqlite3.connect('/Users/petersweeney/Desktop/Coding/taylorNewsletter/newsletter.db') as conn:
             conn.execute('INSERT INTO subscribers (email) VALUES (?)', (email,))
             conn.commit()
         if send_welcome_email(email):
@@ -57,6 +58,7 @@ def subscribe():
     except sqlite3.IntegrityError:
         return jsonify({"success": False, "message": "Email already subscribed"})
     except Exception as e:
+        print(f"Database or email error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 if __name__ == '__main__':
