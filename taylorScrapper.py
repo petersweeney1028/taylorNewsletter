@@ -17,6 +17,7 @@ from config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
+from app import app, db, Subscriber
 
 EMAIL_FROM = 'swiftie@taylortimes.news'
 EMAIL_SUBJECT = 'Taylor Times Newsletter'
@@ -31,11 +32,12 @@ class Subscriber(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
 
 def fetch_subscribers():
-    print("Fetching subscribers...")
-    subscribers = Subscriber.query.all()
-    emails = [subscriber.email for subscriber in subscribers]
-    print(f"Found {len(emails)} subscribers.")
-    return emails
+    with app.app_context():
+        print("Fetching subscribers...")
+        subscribers = Subscriber.query.all()
+        emails = [subscriber.email for subscriber in subscribers]
+        print(f"Found {len(emails)} subscribers.")
+        return emails
 
 def send_email(recipients, html_content):
     print("Preparing to send emails...")
@@ -170,11 +172,13 @@ if __name__ == "__main__":
 
     with app.app_context():
         db.create_all()
-        
+
     # Fetch subscribers and send emails
-    subscribers = fetch_subscribers()
-    if subscribers:
-        send_email(subscribers, final_newsletter_html)
-    else:
-        print("No subscribers found. No emails sent.")
+    with app.app_context():
+        db.create_all()
+        subscribers = fetch_subscribers()
+        if subscribers:
+            send_email(subscribers, final_newsletter_html)
+        else:
+            print("No subscribers found. No emails sent.")
     print("Script completed.")

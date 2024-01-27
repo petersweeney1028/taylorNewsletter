@@ -5,6 +5,7 @@ from flask_cors import CORS
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError 
 
 app = Flask(__name__, template_folder=os.getcwd())
 CORS(app, origins=["https://www.taylortimes.news", "http://127.0.0.1:5000/"])
