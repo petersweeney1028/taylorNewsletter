@@ -31,11 +31,11 @@ class Subscriber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
 
-def fetch_subscribers():
+def fetch_Subscriber():
     with app.app_context():
         print("Fetching subscribers...")
-        subscribers = Subscriber.query.all()
-        emails = [subscriber.email for subscriber in subscribers]
+        Subscriber = Subscriber.query.all()
+        emails = [Subscriber.email for Subscriber in Subscriber]
         print(f"Found {len(emails)} subscribers.")
         return emails
 
@@ -176,9 +176,9 @@ if __name__ == "__main__":
     # Fetch subscribers and send emails
     with app.app_context():
         db.create_all()
-        subscribers = fetch_subscribers()
-        if subscribers:
-            send_email(subscribers, final_newsletter_html)
+        Subscriber = fetch_Subscriber()
+        if Subscriber:
+            send_email(Subscriber, final_newsletter_html)
         else:
             print("No subscribers found. No emails sent.")
     print("Script completed.")
