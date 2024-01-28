@@ -13,7 +13,7 @@ import sqlite3
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from openai import OpenAI
-from config import OPENAI_API_KEY
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=OPENAI_API_KEY)
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
@@ -22,20 +22,12 @@ from app import app, db, Subscriber
 EMAIL_FROM = 'swiftie@taylortimes.news'
 EMAIL_SUBJECT = 'Taylor Times Newsletter'
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///newsletter.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 
-class Subscriber(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-
-def fetch_Subscriber():
+def fetch_subscribers():
     with app.app_context():
         print("Fetching subscribers...")
-        Subscriber = Subscriber.query.all()
-        emails = [Subscriber.email for Subscriber in Subscriber]
+        subscriber_records = Subscriber.query.all()
+        emails = [subscriber.email for subscriber in subscriber_records]
         print(f"Found {len(emails)} subscribers.")
         return emails
 
@@ -175,10 +167,10 @@ if __name__ == "__main__":
 
     # Fetch subscribers and send emails
     with app.app_context():
-        db.create_all()
-        Subscriber = fetch_Subscriber()
-        if Subscriber:
-            send_email(Subscriber, final_newsletter_html)
+        subscribers = fetch_subscribers()
+        if subscribers:
+            send_email(subscribers, final_newsletter_html)
         else:
             print("No subscribers found. No emails sent.")
+
     print("Script completed.")
