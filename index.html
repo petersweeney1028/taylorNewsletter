@@ -13,6 +13,10 @@
         padding: 0;
     }
 
+    .main-content {
+            display: flex; /* Ensures side-by-side layout */
+        }
+
     .title-section {
         background-color: #967bb6; /* Darker Lavender */
         color: white;
@@ -25,29 +29,36 @@
         margin: 0;
         padding: 0;
     }
-        .carousel {
-        width: 100%;
-        height: 800px; /* Set a fixed height for the carousel */
-        margin: auto;
-        overflow: hidden;
-    }
-    .carousel-images {
+    .carousel {
+            width: 66.66%; /* 2/3 of the width */
+            height: 800px; /* Adjust height based on content */
+            position: relative; /* Needed for proper image positioning */
+            overflow: hidden; /* Hide overflowed content */
+        }
+
+        .carousel-images {
+            width: 100%;
+            height: 100%;
+            position: relative; /* Needed for image positioning */
+        }
+
+        .carousel-images img {
+            width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            position: absolute; /* Position images absolutely within the carousel */
+            top: 0;
+            left: 0;
+            display: none; /* Hide all images initially */
+        }
+
+        .subscription-form {
+            width: 33.33%;
             display: flex;
-            transition: transform 0.5s ease;
-        }
-    .carousel-images img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover; /* This will cover the area without distorting the image */
-        display: block;
-        }
-        .subscription-form {
-            margin: 20px;
-            padding: 20px;
-        }
-        .subscription-form {
-        text-align: center;
-        padding: 20px 0; /* Adjust padding for equal spacing */
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            padding: 20px 0; /* Adjust padding for equal spacing */
+            justify-content: center;
         }
 
     .social-proof {
@@ -76,26 +87,39 @@
         .refer-section {
             display: none;
         }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .carousel, .subscription-form {
+                width: 100%;
+            }
+        }   
     </style>
 </head>
 <body>
     <div class="title-section">
         <h1>Taylor Times</h1>
     </div>
-    <div class="carousel">
-        <div class="carousel-images">
-            <img src="static/Taylor1.jpeg" alt="Taylor Swift 1">
-            <img src="static/Taylor3.jpeg" alt="Taylor Swift 3">
-            <img src="static/Taylor4.jpeg" alt="Taylor Swift 4">
+    <div class="main-content">
+        <div class="carousel">
+            <div class="carousel-images">
+                <img src="static/Taylor1.jpeg" alt="Taylor Swift 1">
+                <img src="static/Taylor3.jpeg" alt="Taylor Swift 3">
+                <img src="static/Taylor4.jpeg" alt="Taylor Swift 4">
+            </div>
         </div>
-    </div>
-    <div class="subscription-form">
-        <h2>Subscribe to Taylor Times</h2>
-        <form id="subscription-form">
-            <input type="email" id="email" name="email" placeholder="Enter your email">
-            <button type="submit">Subscribe</button>
-        </form>
-        <p id="message"></p> <!-- Element to display messages -->
+        <div class="subscription-form">
+            <h2>Subscribe to Taylor Times</h2>
+            <form id="subscription-form">
+                <input type="email" id="email" name="email" placeholder="Enter your email">
+                <button type="submit">Subscribe</button>
+            </form>
+            <p id="message"></p> <!-- Element to display messages -->
+            <div class="social-proof">
+                Join thousands of other Swifties in subscribing
+            </div>
+        </div>
     </div>
     <div class="refer-section">
         <h2>Refer Your Friends</h2>
@@ -103,21 +127,23 @@
         <p>Referral Count: <span id="referral-count">0</span></p>
         <!-- List out prizes for referrals -->
     </div>
-    <div class="social-proof">
-        Join thousands of other Swifties in subscribing
-    </div>
+    
 
     <script>
         var carouselImages = document.querySelector('.carousel-images');
-        var imageIndex = 0;
-        var images = carouselImages.children;
+        var images = carouselImages.getElementsByTagName('img'); // Selecting images
         var totalImages = images.length;
+        var imageIndex = 0; // Start with the first image
+
+        // Initially display the first image
+        images[imageIndex].style.display = 'block';
 
         function nextImage() {
             images[imageIndex].style.display = 'none'; // Hide current image
             imageIndex = (imageIndex + 1) % totalImages; // Update index
             images[imageIndex].style.display = 'block'; // Show next image
         }
+
         // Automatically switch images every 3 seconds
         setInterval(nextImage, 3000);
 
